@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "docify": "node docify.js"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.6.0",
+    "@truffle/hdwallet-provider": "^1.7.0",
+    "truffle-plugin-verify": "^0.5.25",
+    "truffle-security": "^1.0.1"
+  }
+}
