@@ -1,0 +1,20 @@
+{
+    "image": "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60",
+    "name": "Diplôme d'ingénieur",
+    "description": "Diplôme d'ingénieur de l'EPITA. Grade de master - Master degree",
+    "attributes": [
+        {
+            "trait_type": "GPA",
+            "value": "3.4",
+            "max_value": "4.0"
+        },
+        {
+            "trait_type": "Major",
+            "value": "SCIA"
+        },
+        {
+            "trait_type": "Type of degree",
+            "value": "Master"
+        }
+    ]
+}

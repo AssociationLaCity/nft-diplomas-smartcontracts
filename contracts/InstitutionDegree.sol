@@ -1,23 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
-import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
-import "../node_modules/@openzeppelin/contracts/utils/Counters.sol";
-import "../node_modules/@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-//import "hardhat/console.sol";
-
-abstract contract IDiplomasSignatures {
+/**
+@title InstitutionDegreeSigner
+@author Charles Simon-Meunier
+*/
+abstract contract IInstitutionDegreeSigner {
     function isCompletelySigned(address wallet)
         public
         view
         virtual
         returns (bool);
+
+    function initSignature(address wallet) public virtual;
 }
 
-contract DiplomasNFT is ERC721, ERC721URIStorage, Ownable {
+contract InstitutionDegree is ERC721, ERC721URIStorage, Ownable {
     using Counters for Counters.Counter;
 
     Counters.Counter private _currentStudentId;
@@ -40,40 +44,40 @@ contract DiplomasNFT is ERC721, ERC721URIStorage, Ownable {
     mapping(address => CheckId) _studentsIds; // Maps student address to their id
     mapping(uint256 => Student) _students; // Maps id to a student struct
 
-    IDiplomasSignatures private _signatures; // Interface for the DiplomasSignatures contract
+    IInstitutionDegreeSigner private _signatures; // Interface for the EpitaDegreeSigner contract
 
     constructor(
         address diplomasSignatures,
-        string memory school,
-        string memory year
-    ) ERC721(school, year) {
-        _signatures = IDiplomasSignatures(diplomasSignatures);
+        string memory school_name,
+        string memory promo_name
+    ) ERC721(school_name, promo_name) {
+        _signatures = IInstitutionDegreeSigner(diplomasSignatures);
     }
 
     function _baseURI() internal pure override returns (string memory) {
         return "https://ipfs.io/ipfs/";
     }
 
-    function mintAll() public onlyOwner {
-        for (uint256 i = 0; i < _currentStudentId.current(); i++) {
-            if (_students[i]._minted || !_students[i]._eligible) continue;
-            uint256 tokenId = _tokenIdCounter.current();
-            _tokenIdCounter.increment();
-            _safeMint(_students[i]._address, tokenId);
-            _setTokenURI(
-                tokenId,
-                "QmRPQVTWYStrXin4p5WtLoh4ptdV4rn8fahgnQFDc7dVeu/"
-            ); // TODO: change this
-            _students[i]._minted = true;
-            _totalMinted.increment();
-        }
+    function claimDegree() public {
+        require(_studentsIds[msg.sender]._isPresent, "You are not eligible to claim this degree");
+        require(!_students[_studentsIds[msg.sender]._id]._minted, "You have already claimed your degree");
+        require(_students[_studentsIds[msg.sender]._id]._eligible, "You are not eligible");
+        uint256 tokenId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        _safeMint(_students[_studentsIds[msg.sender]._id]._address, tokenId);
+        _setTokenURI(
+            tokenId,
+            "QmRPQVTWYStrXin4p5WtLoh4ptdV4rn8fahgnQFDc7dVeu/"
+        ); // TODO: change this
+        _students[_studentsIds[msg.sender]._id]._minted = true;
+        _totalMinted.increment();
     }
 
-    function _burn(uint256 tokenId)
+    function _burn(uint256)
         internal
         override(ERC721, ERC721URIStorage)
     {
-        super._burn(tokenId);
+       revert Soulbound();
     }
 
     function tokenURI(uint256 tokenId)
@@ -98,6 +102,7 @@ contract DiplomasNFT is ERC721, ERC721URIStorage, Ownable {
         uint256 tokenId = _currentStudentId.current();
         _students[tokenId] = Student(student, false, false);
         _studentsIds[student] = CheckId(tokenId, true);
+        _signatures.initSignature(student);
         _currentStudentId.increment();
     }
 
@@ -109,6 +114,12 @@ contract DiplomasNFT is ERC721, ERC721URIStorage, Ownable {
         Student storage student = _students[_studentsIds[wallet]._id];
         student._eligible = _signatures.isCompletelySigned(wallet);
         return student._eligible;
+    }
+
+    function updateStudentsEligibility() public onlyOwner {
+        for (uint256 i = 0; i < _currentStudentId.current(); i++) {
+            _students[i]._eligible = _signatures.isCompletelySigned(_students[i]._address);
+        }
     }
 
     // Getters
@@ -139,5 +150,39 @@ contract DiplomasNFT is ERC721, ERC721URIStorage, Ownable {
 
     function getSignaturesAddress() public view returns (address) {
         return address(_signatures);
+    }
+
+    error Soulbound();
+
+    /// @notice This function was disabled to make the token Soulbound. Calling it will revert
+    function approve(address, uint256) public virtual override(ERC721) {
+        revert Soulbound();
+    }
+
+    /// @notice This function was disabled to make the token Soulbound. Calling it will revert
+    function isApprovedForAll(address, address)
+        public
+        view
+        virtual
+        override(ERC721)
+        returns (bool)
+    {
+        revert Soulbound();
+    }
+
+    /// @notice This function was disabled to make the token Soulbound. Calling it will revert
+    function getApproved(uint256)
+        public
+        view
+        virtual
+        override(ERC721)
+        returns (address)
+    {
+        revert Soulbound();
+    }
+
+    /// @notice This function was disabled to make the token Soulbound. Calling it will revert
+    function setApprovalForAll(address, bool) public virtual override(ERC721) {
+        revert Soulbound();
     }
 }

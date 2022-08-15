@@ -1,17 +1,17 @@
-const DiplomasSignatures = artifacts.require("DiplomasSignatures");
-const DiplomasNFT = artifacts.require("DiplomasNFT");
+const EpitaDegreeSigner = artifacts.require("EpitaDegreeSigner");
+const EpitaDegree = artifacts.require("EpitaDegree");
 
 module.exports = function (_deployer) {
   _deployer
-    .deploy(DiplomasSignatures, 3, [
+    .deploy(EpitaDegreeSigner, 3, [
       ["0x2f4acB6AFd7A119faD3CDba4BF83267EFa001e7e"],
       ["0x2f4acB6AFd7A119faD3CDba4BF83267EFa001e7e"],
-      ["0xe29B8C61d9De268e1297B46E8b5B82e0A98eB7b6"],
+      ["0x2f4acB6AFd7A119faD3CDba4BF83267EFa001e7e"],
     ])
     .then(function () {
       return _deployer.deploy(
-        DiplomasNFT,
-        DiplomasSignatures.address,
+        EpitaDegree,
+        EpitaDegreeSigner.address,
         "EPITA",
         "2024"
       );

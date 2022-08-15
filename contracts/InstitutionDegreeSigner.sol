@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 /**
-@title DiplomasSignatures
+@title InstitutionDegreeSigner
 @author Charles Simon-Meunier
 */
-contract DiplomasSignatures {
+contract InstitutionDegreeSigner {
     address[][] private _addresses;
     uint256 private _layers;
     bool private signatureInProgress = false;
@@ -26,6 +28,11 @@ contract DiplomasSignatures {
                 _addresses[i][j] = addresses[i][j];
             }
         }
+    }
+
+    function recoverSigner(bytes32 hash, bytes memory signature) public pure returns (address) {
+        bytes32 messageDigest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+        return ECDSA.recover(messageDigest, signature);
     }
 
     function getAddresses() public view returns (address[][] memory) {
@@ -144,7 +151,7 @@ contract DiplomasSignatures {
         _signatures[wallet].init = true;
     }
 
-    function sign(address wallet, uint256 layer) public {
+    function sign(address wallet, uint256 layer, bytes32 hash, bytes memory signature) public {
         require(!signatureInProgress, "Signature in progress");
         signatureInProgress = true;
         if (!_signatures[wallet].init) {
@@ -160,6 +167,7 @@ contract DiplomasSignatures {
             }
         }
         require(_isSigner, "Only signers can sign");
+        require(recoverSigner(hash, signature) == msg.sender, "Signature not valid");
         require(isInLayer, "Only signers in this layer can sign");
         require(
             !_signatures[wallet]._signed[layer][index_in_layer],
