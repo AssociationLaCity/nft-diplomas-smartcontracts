@@ -12,12 +12,14 @@ contract InstitutionDegreeSigner {
     uint256 private _layers;
     bool private signatureInProgress = false;
 
-    struct Signature {
+    struct sSignature {
         bool[][] _signed;
+        bytes32[][] _hashes;
+        bytes[][] _signatures;
         bool init;
     }
 
-    mapping(address => Signature) _signatures;
+    mapping(address => sSignature) _signatures;
 
     constructor(uint256 layers, address[][] memory addresses) {
         _addresses = new address[][](layers);
@@ -147,6 +149,8 @@ contract InstitutionDegreeSigner {
         _signatures[wallet]._signed = new bool[][](_addresses.length);
         for (uint256 i = 0; i < _layers; i++) {
             _signatures[wallet]._signed[i] = new bool[](_addresses[i].length);
+            _signatures[wallet]._hashes[i] = new bytes32[](_addresses[i].length);
+            _signatures[wallet]._signatures[i] = new bytes[](_addresses[i].length);
         }
         _signatures[wallet].init = true;
     }
@@ -174,7 +178,9 @@ contract InstitutionDegreeSigner {
             "You have already signed"
         );
         _signatures[wallet]._signed[layer][index_in_layer] = true;
-        emit Signed(wallet, layer);
+        _signatures[wallet]._hashes[layer][index_in_layer] = hash;
+        _signatures[wallet]._signatures[layer][index_in_layer] = signature;
+        emit Signature(msg.sender, wallet, layer, index_in_layer, hash, signature);
         if (isCompletelySigned(wallet)) {
             emit CompletelySigned(wallet);
         }
@@ -211,7 +217,14 @@ contract InstitutionDegreeSigner {
         return true;
     }
 
-    event Signed(address waller, uint256 layer);
+    event Signature (
+        address signer,
+        address wallet,
+        uint256 layer,
+        uint256 index,
+        bytes32 hash,
+        bytes signature
+    );
 
     event CompletelySigned(address wallet);
 }
